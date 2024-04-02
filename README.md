@@ -1,6 +1,9 @@
 # SegGPT Fine-Tune
 **Unofficial** training code for [SegGPT](https://github.com/baaivision/Painter).
 
+![SegGPT](https://i.imgur.com/ZqxJzmI.png)
+From left to right: input image, masked label, ground truth, raw model prediction, discretized model prediction.
+
 ## Disclaimer
 - This implementation is based on **my understanding of the paper** and by **reverse-engineering how the model works** from the official implementation.
 - I have tested this code to fine-tune on [OEM dataset](https://open-earth-map.org/) and got promising results. However, there might be some bugs or mistakes in the code. Feel free to raise an issue.
