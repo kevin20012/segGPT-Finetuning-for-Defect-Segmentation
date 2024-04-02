@@ -1,48 +1,55 @@
-<div align="center">
+# SegGPT Fine-Tune
+**Unofficial** training code for [SegGPT](https://github.com/baaivision/Painter).
 
-<h2>Painter  → SegGPT: Vision Foundation Models from BAAI</h2>
+## Disclaimer
+- This implementation is based on **my understanding of the paper** and by **reverse-engineering how the model works** from the official implementation.
+- I have tested this code to fine-tune on [OEM dataset](https://open-earth-map.org/) and got promising results. However, there might be some bugs or mistakes in the code. Feel free to raise an issue.
+- Fine-tuning from the provided [checkpoint](https://huggingface.co/BAAI/SegGPT/blob/main/seggpt_vit_large.pth) requires a lot of GPU memory (at least 24GB) as this trains the whole ViT-16 backbone. Consider using smaller batch size or smaller model overall. I might implement training using LoRA to support smaller VRAM in the future if this repo gains enough tractions.
 
-https://user-images.githubusercontent.com/22233070/230440971-ad015101-205f-4b02-a176-de6e94848b5a.mp4
+## Setup
+This code is developed with Python 3.9.
 
+### PIP
+Install the required packages by running:
+```bash
+pip install -r requirements.txt
+```
 
-</div>
+### Conda (Only for Linux)
+Create a new conda environment and install the required packages by running:
+```bash
+conda env create -f env.yml
+```
 
----
+## Dataset
+Setup your dataset directory as follows:
+```
+<root_dataset_path>
+├── images
+│   ├── image1.tif
+│   ├── image2.tif
+│   ...
+└── labels
+    ├── image1.tif
+    ├── image2.tif
+    ...
+```
+**Note**:
+- Image and labels must have the same name and extension (or you can modify `data.py` to support your needs).
+- The extension **does not** have to be `.tif` as long as it can be loaded using `PIL` library. 
+- The label is a **single-channel** image where each pixel value represents the **class** of that pixel.
 
+## Training
+Create a `.json` config file. You can use the provided `configs/base.json` as a template. Then, run:
+```bash
+python train.py --config <path_to_json_config>
+```
+The training uses DDP strategy and utilizes all available GPUs by default. You can specify the GPU to use by setting `CUDA_VISIBLE_DEVICES` in the environment variable.
 
-- [**Painter**](Painter) (CVPR 2023) - Images Speak in Images: A Generalist Painter for In-Context Visual Learning
+You can also launch tensorboard to monitor the training progress:
+```bash
+tensorboard --logdir logs
+```
 
-- [**SegGPT**](SegGPT) (ICCV 2023) - SegGPT: Segmenting Everything In Context
-
-
-## News
-- 2023.4 Inference code and model of SegGPT are available at [here](SegGPT/SegGPT_inference/README.md).
-- 2023.4 We combined SAM and SegGPT to enable one touch for segmentation in all images (一触百通), as well as any segmentation in a video (分割视频中的一切). Check it out [here](https://huggingface.co/spaces/BAAI/SegGPT).
-- 2023.4 Enjoy the [SegGPT demo](https://huggingface.co/spaces/BAAI/SegGPT).
-- 2023.3 Code and model of Painter are available.
-
-## Contact
-- **We are hiring** at all levels at BAAI Vision Team, including full-time researchers, engineers and interns. 
-If you are interested in working with us on **foundation model, visual perception and multimodal learning**, please contact [Xinlong Wang](https://www.xloong.wang/) (`wangxinlong@baai.ac.cn`) and [Yue Cao](http://yue-cao.me/) (`caoyue@baai.ac.cn`).
-
-
-
-## License
-
-The content of this project itself is licensed under [LICENSE](LICENSE).
-
-
-## Misc
-
-<div align="center">
-
-[![Stargazers repo roster for @baaivision/Painter](https://reporoster.com/stars/baaivision/Painter)](https://github.com/baaivision/Painter/stargazers)
-
-
-[![Forkers repo roster for @baaivision/Painter](https://reporoster.com/forks/baaivision/Painter)](https://github.com/baaivision/Painter/network/members)
-
-
-[![Star History Chart](https://api.star-history.com/svg?repos=baaivision/Painter&type=Date)](https://star-history.com/#baaivision/Painter&Date)
-
-</div>
-
+## Learnable Tensor
+In the paper, the author mentioned using learnable tensor for in-context tuning. You can find my implementation for this in `model.py`.
