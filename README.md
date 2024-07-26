@@ -1,9 +1,15 @@
 # SegGPT Fine-Tune  
 ## Fine Tuning Method
 0. **환경 설정**  
+* conda 환경 설정  
 ```bash
 conda env create -f segGPT.yml
-```
+```  
+* pretrained 가중치 가져오기
+```bash
+wget https://huggingface.co/BAAI/SegGPT/raw/main/seggpt_vit_large.pth
+```  
+
 1. **Data format**  
 ```
 ./dataset/train_dataset
@@ -51,5 +57,8 @@ python train.py --port {안쓰는 port 입력}
 5. inference 시작 명령
 ```bash
 python inference.py --model-path /shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/seggpt_vit_large.pth --prompt-img-dir /shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/dataset/train_dataset/train/images --prompt-label-dir /shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/dataset/train_dataset/train/labels --dataset-dir /shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/dataset/train_dataset/val/images --mapping /shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/mappings/mapping_vit_filtered.json --top-k 1 --outdir /shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/output --split 1
-```
+```  
+
+* **Inference Output**  
+이미 생성해놓은 결과는 ouput 폴더에 있습니다.
 

@@ -7,6 +7,7 @@ work_dirs/
 wandb
 datasets
 .idea
+dataset
 
 .nfs*
 *.pth
@@ -19,5 +20,5 @@ log*.txt
 *.png
 *.tif
 *.jpeg
-*.jpg
+
 logs
