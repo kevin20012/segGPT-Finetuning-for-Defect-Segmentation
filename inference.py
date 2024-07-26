@@ -261,7 +261,7 @@ if __name__ == '__main__':
 
     model = seggpt_vit_large_patch16_input896x448()
     ckpt = T.load(args.model_path, map_location='cpu')
-    model.load_state_dict(ckpt['model'])
+    model.load_state_dict(ckpt['model_state_dict'])
     print('Checkpoint loaded')
 
     model = model.to(args.device)

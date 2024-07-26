@@ -56,7 +56,7 @@ python train.py --port {안쓰는 port 입력}
 ```
 5. inference 시작 명령
 ```bash
-python inference.py --model-path /shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/seggpt_vit_large.pth --prompt-img-dir /shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/dataset/train_dataset/train/images --prompt-label-dir /shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/dataset/train_dataset/train/labels --dataset-dir /shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/dataset/train_dataset/val/images --mapping /shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/mappings/mapping_vit_filtered.json --top-k 1 --outdir /shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/output --split 1
+python inference.py --model-path /shared/home/vclp/hyunwook/junhyung/weights/segGPT/1721928987/weights/current_pt.pt --prompt-img-dir /shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/dataset/train_dataset/train/images --prompt-label-dir /shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/dataset/train_dataset/train/labels --dataset-dir /shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/dataset/train_dataset/val/images --mapping /shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/mappings/mapping_vit_filtered.json --top-k 1 --outdir /shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/output --split 2
 ```  
 
 * **Inference Output**  
