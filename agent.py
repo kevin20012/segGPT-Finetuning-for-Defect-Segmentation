@@ -138,6 +138,7 @@ class Agent():
         mask = mask[:, :, None].repeat(1, 1, self.model.module.patch_size**2 * 3)
         mask = self.model.module.unpatchify(mask)
         mask = mask.to(pred.device)
+
         ori_label = ori_label.to(pred.device)
         color_palette = color_palette.to(pred.device)
 
@@ -185,6 +186,9 @@ class Agent():
                 self.visualize(f'Training/{epoch}', img, label, preds, cmaps, masks)
                 yield i
 
+            #save_pt
+            if i!=0 and i%500 == 0:
+                self.save_checkpoint(epoch + 1, 'current_pt')
 
             if self.gpu_id != 0:  # reset for gpu rank > 0
                 batch_losses = T.zeros(2, device=self.gpu_id)

@@ -19,15 +19,15 @@ def get_args_parser():
     parser.add_argument('--model', type=str, help='dir to ckpt',
                         default='seggpt_vit_large_patch16_input896x448')
     parser.add_argument('--input_image', type=str, help='path to input image to be tested',
-                        default=None)
+                        default='/shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/dataset/train/Cable/thunderbolt/image/thunderbolt_000000.jpg')
     parser.add_argument('--input_video', type=str, help='path to input video to be tested',
                         default=None)
     parser.add_argument('--num_frames', type=int, help='number of prompt frames in video',
                         default=0)
-    parser.add_argument('--prompt_image', type=str, nargs='+', help='path to prompt image',
-                        default=None)
-    parser.add_argument('--prompt_target', type=str, nargs='+', help='path to prompt target',
-                        default=None)
+    parser.add_argument('--prompt_image', type=str, help='path to prompt image',
+                        default='/shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/dataset/train/Cable/thunderbolt/image/thunderbolt_000010.jpg')
+    parser.add_argument('--prompt_target', type=str, help='path to prompt target',
+                        default='/shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/dataset/train/Cable/thunderbolt/label/thunderbolt_000010.jpg')
     parser.add_argument('--seg_type', type=str, help='embedding for segmentation types', 
                         choices=['instance', 'semantic'], default='instance')
     parser.add_argument('--device', type=str, help='cuda or cpu',
@@ -43,7 +43,8 @@ def prepare_model(chkpt_dir, arch='seggpt_vit_large_patch16_input896x448', seg_t
     model.seg_type = seg_type
     # load model
     checkpoint = torch.load(chkpt_dir, map_location='cpu')
-    msg = model.load_state_dict(checkpoint['model'], strict=False)
+    msg = model.load_state_dict(checkpoint['model_state_dict'], strict=False)
+    # msg = model.load_state_dict(checkpoint['model'], strict=False)
     model.eval()
     return model
 
@@ -60,7 +61,7 @@ if __name__ == '__main__':
         assert args.prompt_image is not None and args.prompt_target is not None
 
         img_name = os.path.basename(args.input_image)
-        out_path = os.path.join(args.output_dir, "output_" + '.'.join(img_name.split('.')[:-1]) + '.png')
+        out_path = os.path.join(args.output_dir, "output_" + '.'.join(img_name.split('.')[:-1]) + '.jpg')
 
         inference_image(model, device, args.input_image, args.prompt_image, args.prompt_target, out_path)
     

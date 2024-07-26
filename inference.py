@@ -17,13 +17,7 @@ IMAGENET_STD = np.array([0.229, 0.224, 0.225])
 
 COLOR_MAP = np.array([
     (0, 0,  0), # Background
-    (255, 0,  0), # Tree
-    (0, 255, 255), # Rangeland
-    (0, 255,  0), # Bareland
-    (255, 255, 0), # Agric land type 1
-    (0,  0, 255), # Road type 1
     (255,  255, 255), # Sea, lake, & pond
-    (255,   0,  255), # Building type 1
 ])
 
 @torch.no_grad()
@@ -50,6 +44,7 @@ def run_one_image(img, tgt, model, device, mask=None):
     y = torch.einsum('nchw->nhwc', y).detach().cpu()
 
     output = y[0, y.shape[1]//2:, :, :] 
+
     output = torch.clip((output * IMAGENET_STD + IMAGENET_MEAN) * 255, 0, 255)
 
     mask = mask[:, :, None].repeat(1, 1, model.patch_size**2 * 3)
@@ -103,7 +98,7 @@ def inference_image_with_crop(model, device, img_path, img2_paths, tgt2_paths, o
                         img = img - IMAGENET_MEAN
                         img = img / IMAGENET_STD
 
-                        assert tgt.shape == (2*res, res, 3), f'{img.shape}'
+                        assert tgt.shape == (2*res, res, 3), f'{tgt.shape}'
                         # normalize by ImageNet mean and std
                         tgt = tgt - IMAGENET_MEAN
                         tgt = tgt / IMAGENET_STD
@@ -120,6 +115,7 @@ def inference_image_with_crop(model, device, img_path, img2_paths, tgt2_paths, o
                 size=[row_size, col_size], 
                 mode='nearest',
             ).permute(0, 2, 3, 1)
+            
             output, label = cmap_to_lbl(output, torch.tensor(COLOR_MAP, device=output.device, dtype=output.dtype).unsqueeze(0))
             output = output[0].numpy()
             label = label[0].numpy()
@@ -132,7 +128,7 @@ def inference_image_with_crop(model, device, img_path, img2_paths, tgt2_paths, o
     concat = Image.fromarray((concat).astype(np.uint8))
     final_out_label = Image.fromarray((final_out_label).astype(np.uint8))
 
-    filename = os.path.basename(img_path).replace('.tif', '.png')
+    filename = os.path.basename(img_path)
     os.makedirs(os.path.join(outdir, 'color'), exist_ok=True)
     os.makedirs(os.path.join(outdir, 'concat'), exist_ok=True)
     os.makedirs(os.path.join(outdir, 'label'), exist_ok=True)
@@ -222,6 +218,7 @@ def inference_stitch(model, device, img_path, tgt_path, lbl_path, img2_paths, tg
             size=[row_size, col_size], 
             mode='nearest',
         ).permute(0, 2, 3, 1)
+        
         output, label = cmap_to_lbl(output, torch.tensor(COLOR_MAP, device=output.device, dtype=output.dtype).unsqueeze(0))
         output = output[0].numpy()
         label = label[0].numpy()
@@ -235,7 +232,7 @@ def inference_stitch(model, device, img_path, tgt_path, lbl_path, img2_paths, tg
     final_out_label = Image.fromarray((final_out_label).astype(np.uint8))
     concat = Image.fromarray((concat).astype(np.uint8))
 
-    filename = os.path.basename(img_path).replace('.tif', '.png')
+    filename = os.path.basename(img_path)
     os.makedirs(os.path.join(outdir, 'stitch', 'color'), exist_ok=True)
     os.makedirs(os.path.join(outdir, 'stitch', 'concat'), exist_ok=True)
     os.makedirs(os.path.join(outdir, 'stitch', 'label'), exist_ok=True)
@@ -247,15 +244,15 @@ def inference_stitch(model, device, img_path, tgt_path, lbl_path, img2_paths, tg
 def get_args_parser():
     parser = argparse.ArgumentParser('SegGPT inference', add_help=False)
     parser.add_argument('--model-path', type=str, help='path to ckpt', required=True)
-    parser.add_argument('--prompt-img-dir', type=str, help='path to prompt image directory', default='/disk3/steve/dataset/OpenEarthMap-FSS/trainset/images')
-    parser.add_argument('--prompt-label-dir', type=str, help='path to prompt colored label directory', default='/disk3/steve/dataset/OpenEarthMap-FSS/trainset/labels_color')
-    parser.add_argument('--dataset-dir', type=str, help='path to input image dir to be tested', default='/disk3/steve/dataset/OpenEarthMap-FSS/testset/images')
+    parser.add_argument('--prompt-img-dir', type=str, help='path to prompt image directory', default='/shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/dataset/train_dataset/train/images')
+    parser.add_argument('--prompt-label-dir', type=str, help='path to prompt colored label directory', default='/shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/dataset/train_dataset/train/labels')
+    parser.add_argument('--dataset-dir', type=str, help='path to input image dir to be tested', default='/shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/dataset/train_dataset/val/images')
     parser.add_argument('--mapping', type=str, help='path to mapping of query and prompt list', default="mappings/mapping_vit_filtered.json")
     parser.add_argument('--split', type=int, help='how many to image split into (each dim)', default=2)
     parser.add_argument('--stitch-width', type=int, help='width of the stitching', default=4)
     parser.add_argument('--top-k', type=int, help='top-k prompts to use', default=2)
     parser.add_argument('--device', type=str, help='cuda or cpu', default='cuda')
-    parser.add_argument('--outdir', type=str, help='path to output directory', default='./')
+    parser.add_argument('--outdir', type=str, help='path to output directory', default='/shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/output')
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -264,7 +261,7 @@ if __name__ == '__main__':
 
     model = seggpt_vit_large_patch16_input896x448()
     ckpt = T.load(args.model_path, map_location='cpu')
-    model.load_state_dict(ckpt['model_state_dict'])
+    model.load_state_dict(ckpt['model'])
     print('Checkpoint loaded')
 
     model = model.to(args.device)
@@ -274,12 +271,12 @@ if __name__ == '__main__':
     for input_image in tqdm(mapping):
         input = os.path.join(args.dataset_dir, input_image)
         prompt = [os.path.join(args.prompt_img_dir, file) for file in mapping[input_image][:args.top_k]]
-        prompt_target = [os.path.join(args.prompt_label_dir, file.replace('.tif', '.png')) for file in mapping[input_image][:args.top_k]]
+        prompt_target = [os.path.join(args.prompt_label_dir, file) for file in mapping[input_image][:args.top_k]]
         inference_image_with_crop(model, args.device, input, prompt, prompt_target, args.outdir, split=args.split)
         # inference_image_with_crop_v2(model, args.device, input, prompt, prompt_target, args.outdir, args.top_k, split=args.split)
         if args.split == 2:
-            tgt_path = os.path.join(args.outdir, 'color', input_image.replace('.tif', '.png'))
-            lbl_path = os.path.join(args.outdir, 'label', input_image.replace('.tif', '.png'))
+            tgt_path = os.path.join(args.outdir, 'color', input_image)
+            lbl_path = os.path.join(args.outdir, 'label', input_image)
             inference_stitch(model, args.device, input, tgt_path, lbl_path, prompt, prompt_target, args.outdir, split=args.split, width=args.stitch_width)
 
 """

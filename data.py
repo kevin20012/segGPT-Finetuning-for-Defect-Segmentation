@@ -13,6 +13,7 @@ class BaseDataset(torch.utils.data.Dataset):
     def __init__(
         self, 
         root:str, 
+        data_count:int,
         n_classes: int,
         mean:Iterable[float]=[0.485, 0.456, 0.406], 
         std:Iterable[float]=[0.229, 0.224, 0.225], 
@@ -26,6 +27,7 @@ class BaseDataset(torch.utils.data.Dataset):
         assert osp.exists(osp.join(root, 'labels')), f'Path {root}/labels does not exist'
         
         self.root = root
+        self.data_count = data_count if data_count!=-1 else None
         self.mean = np.array(mean)
         self.std = np.array(std)
         self.resize = resize
@@ -36,7 +38,7 @@ class BaseDataset(torch.utils.data.Dataset):
         self.logger = get_logger(__class__.__name__, 0) # TODO: Bug, every process will log
         
         self.paths = []
-        for path in os.listdir(osp.join(self.root, 'images')):
+        for path in os.listdir(osp.join(self.root, 'images'))[:self.data_count]:
             img_path = osp.join(self.root, 'images', path)
             label_path = osp.join(self.root, 'labels', path)
             if not osp.exists(label_path):
@@ -135,8 +137,12 @@ class BaseDataset(torch.utils.data.Dataset):
 
     def _lbl_random_color(self, label: np.ndarray, color_palette: np.ndarray):
         result = np.zeros((label.shape[0], label.shape[1], 3), dtype=np.uint8)
-        for i in range(self.n_classes):
-            result[label == i] = color_palette[i]
+
+        # for i in range(self.n_classes):
+        #     result[label==i] = color_palette[i]
+        result[label==0] = color_palette[0]
+        result[label!=0] = color_palette[1]
+        
         return result
 
     def _to_img_tensor(self, arr: np.ndarray):
@@ -150,10 +156,10 @@ class BaseDataset(torch.utils.data.Dataset):
     def _generate_mask(self, img_shape: Tuple[int, int], is_half: bool = False):
         # 1 means masked, 0 means not masked
         total_patch = (img_shape[0] // self.patch_size[0]) * (img_shape[1] // self.patch_size[1])
-        if is_half:
+        if is_half: #inference 시 input image에 해당하는 label 영역을 막음
             mask = torch.zeros(total_patch, dtype=torch.float32)
             mask[total_patch//2:] = 1
-        else:
+        else: #train 시 부분적으로 마스크를 씌워 이러한 영역에 대한 결과를 학습하도록함.
             total_ones = int(total_patch * self.mask_ratio)
             shuffle_idx = torch.randperm(total_patch)
             mask = torch.FloatTensor([0] * (total_patch - total_ones) + [1] * total_ones)[shuffle_idx]
@@ -189,9 +195,9 @@ class BaseDataset(torch.utils.data.Dataset):
         ori_label = torch.FloatTensor(ori_label)
         
         if not self.is_train:
-            is_half = True
+            is_half = True 
         else:
-            is_half = idx < len(self.same_class_pairs)
+            is_half = False
         mask = self._generate_mask((img.shape[1], img.shape[2]), is_half)
         valid = torch.ones_like(label)
         seg_type = torch.zeros([1])

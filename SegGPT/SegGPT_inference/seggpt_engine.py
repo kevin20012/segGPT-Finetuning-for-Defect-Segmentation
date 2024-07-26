@@ -22,6 +22,16 @@ class Cache(list):
         if len(self) > self.max_size:
             self.pop(0)
 
+def lbl_random_color(label: np.ndarray, color_palette: np.ndarray):
+        result = np.zeros((label.shape[0], label.shape[1], 3), dtype=np.uint8)
+
+        # for i in range(self.n_classes):
+        #     result[label==i] = color_palette[i]
+        result[label==0] = color_palette[0]
+        result[label!=0] = color_palette[1]
+        
+        return result
+
 
 @torch.no_grad()
 def run_one_image(img, tgt, model, device):
@@ -47,9 +57,10 @@ def run_one_image(img, tgt, model, device):
     _, y, mask = model(x.float().to(device), tgt.float().to(device), bool_masked_pos.to(device), valid.float().to(device), seg_type.to(device), feat_ensemble)
     y = model.unpatchify(y)
     y = torch.einsum('nchw->nhwc', y).detach().cpu()
-
+    
     output = y[0, y.shape[1]//2:, :, :]
     output = torch.clip((output * imagenet_std + imagenet_mean) * 255, 0, 255)
+
     return output
 
 
@@ -62,7 +73,8 @@ def inference_image(model, device, img_path, img2_paths, tgt2_paths, out_path):
     image = np.array(image.resize((res, hres))) / 255.
 
     image_batch, target_batch = [], []
-    for img2_path, tgt2_path in zip(img2_paths, tgt2_paths):
+    for img2_path, tgt2_path in list(zip([img2_paths], [tgt2_paths])):
+        
         img2 = Image.open(img2_path).convert("RGB")
         img2 = img2.resize((res, hres))
         img2 = np.array(img2) / 255.
@@ -99,7 +111,8 @@ def inference_image(model, device, img_path, img2_paths, tgt2_paths, out_path):
         size=[size[1], size[0]], 
         mode='nearest',
     ).permute(0, 2, 3, 1)[0].numpy()
-    output = Image.fromarray((input_image * (0.6 * output / 255 + 0.4)).astype(np.uint8))
+    # output = Image.fromarray((input_image * (0.6 * output / 255 + 0.4)).astype(np.uint8))
+    output = Image.fromarray(output.astype(np.uint8))
     output.save(out_path)
 
 
