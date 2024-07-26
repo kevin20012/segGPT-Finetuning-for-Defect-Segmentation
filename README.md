@@ -60,5 +60,7 @@ python inference.py --model-path /shared/home/vclp/hyunwook/junhyung/segGPT_orig
 ```  
 
 * **Inference Output**  
-이미 생성해놓은 결과는 ouput 폴더에 있습니다.
+이미 생성해놓은 결과는 ouput 폴더에 있습니다.  
+아래는 하나의 output예시입니다.
+![outputImage](./output/concat/thunderbolt_000925.jpg)
 
