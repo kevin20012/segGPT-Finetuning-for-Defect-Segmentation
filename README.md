@@ -61,7 +61,7 @@ python train.py --port {안쓰는 port 입력}
 tensorboard --logdir logs --port {원하는 포트번호}
 ```
 이미지 로그 설명
-![example](./train_image_example.png)
+![example](./train_image_example.jpg)
 순서대로 [input image], [mask+ground truth], [ground truth], [패치별 예측 결과], [cmap_to_lbl]로 계산한 최종 이미지
 ### 추론
 1. mapping_vit_filtered.json 파일로 input image 및 prompt image 설정  
@@ -91,39 +91,34 @@ split 인수를 이용해 사진을 n^2 크기의 조각으로 잘라내 각각�
 실험 결과, **split=2** 일때, 가장 높은 mIou를 보였습니다. 
 
 결함이 작은 전자회로의 결함을 판별하는데는 split이 작을 수록 유리하였지만, 케이블의 결함과 같이 큰 결함의 경우에는 결함을 판별하는데 불리하게 작용하게되었습니다.  
-<p>split = 1</p>
-<div style="display:flex; flex-direction: row;">
-        <div>
-                <img src="./output_split_1/concat/mouse_bite_000518.jpg" style="height:200px;">
-                <p style="text-align:center;font-weight:bold;">Iou : 0.0</p>
-        </div>
-        <div>
-                <img src="./output_split_1/concat/thunderbolt_000925.jpg" style="height:200px;">
-                <p style="text-align:center;font-weight:bold;">Iou : 0.099</p>
-        </div>
-</div>        
-<p>split = 2</p>
-<div style="display:flex; flex-direction: row;">
-        <div>
-                <img src="./output_split_2/concat/mouse_bite_000518.jpg" style="height:200px;">
-                <p style="text-align:center;font-weight:bold;">Iou : 0.39</p>
-        </div>
-        <div>
-                <img src="./output_split_2/concat/thunderbolt_000925.jpg" style="height:200px;">
-                <p style="text-align:center;font-weight:bold;">Iou : 0.529</p>
-        </div>
-</div>      
-<p>split = 4</p>
-<div style="display:flex; flex-direction: row;">
-        <div>
-                <img src="./output_split_4/concat/mouse_bite_000518.jpg" style="height:200px;">
-                <p style="text-align:center;font-weight:bold;">Iou : 0.46</p>
-        </div>
-        <div>
-                <img src="./output_split_4/concat/thunderbolt_000925.jpg" style="height:200px;">
-                <p style="text-align:center;font-weight:bold;">Iou : 0.0</p>
-        </div>
-</div>      
+### split = 1
+
+<img src="./output_split_1/concat/mouse_bite_000518.jpg" height="200"/>  
+
+#### Iou : 0.0
+
+<img src="./output_split_1/concat/thunderbolt_000925.jpg" height="200"/>
+
+#### Iou : 0.099
+
+### split = 2  
+<img src="./output_split_2/concat/mouse_bite_000518.jpg" height="200"/>
+
+#### Iou : 0.39
+
+<img src="./output_split_2/concat/thunderbolt_000925.jpg" height="200"/>
+
+#### Iou : 0.529   
+
+### split = 4
+<img src="./output_split_4/concat/mouse_bite_000518.jpg" height="200"/>
+
+#### Iou : 0.46
+
+<img src="./output_split_4/concat/thunderbolt_000925.jpg" height="200"/>
+
+#### Iou : 0.0
+     
 너무 잘게 자른 경우, 큰 결함부위를 잘 예측하지 못하기 때문으로 보입니다.  
 
 다음은 split에 따른 mIou 차이입니다.  
@@ -135,13 +130,32 @@ split 인수를 이용해 사진을 n^2 크기의 조각으로 잘라내 각각�
   
 각 split별 iou의 결과는 ouput_split_{split} 디렉토리 내 **iou.txt**로 확인할 수 있습니다.  
 테스트는 **train과정에서 사용되지 않은 11개의 서로다른 종류의 결함**으로 구성되어있습니다.  
+# 결과
+|Image|Iou|
+|---|---|
+|<img src="./output_final/concat/front_000925.jpg" height="200"/>|**0.843**|
+|<img src="./output_final/concat/impurities_000045.jpg" height="200"/>|**0.777**|
+|<img src="./output_final/concat/mouse_bite_000518.jpg" height="200"/>|**0.424**|
+|<img src="./output_final/concat/open_circuit_000061.jpg" height="200"/>|**0.562**|
+|<img src="./output_final/concat/Porosity_000925.jpg" height="200"/>|**0.419**|
+|<img src="./output_final/concat/RCS_000081.jpg" height="200"/>|**0.623**|
+|<img src="./output_final/concat/short_000081.jpg" height="200"/>|**0.608**|
+|<img src="./output_final/concat/spur_000045.jpg" height="200"/>|**0.508**|
+|<img src="./output_final/concat/spurious_copper_000497.jpg" height="200"/>|**0.609**|
+|<img src="./output_final/concat/thunderbolt_000925.jpg" height="200"/>|**0.534**|
+|<img src="./output_final/concat/torn_apart_000045.jpg" height="200"/>|**0.044**|
+
+|mIou|
+|---|
+|**0.541**|
+
 
 # 더 발전시킬 수 있는 것
 segGPT 논문에 따르면 기존 모델의 가중치는 freeze한 채로 learnable image tensor를 이용해 input image와 함께 모델에 넣고, 이를 학습시키는 방법이 제안되었는데, 구현 방향을 잡지 못해 아직 구현하지 못하였습니다. 이는 앞으로 연구해보면 좋을 것 같습니다. 참고로 Painter를 소개한 논문인 Images Speak in Images 에 이 방법이 구체적으로 나와있어서 이를 참고하면 좋을 것 같습니다
   
 # 수정 내역
 - data.py 의 **_generate_color_palette, _lbl_random_color**을 수정하여, 훈련시 배경은 검은색으로 결함은 랜덤색상으로 배정될 수 있도록 수정.
-- data.py 에서 is_half가 학습 과정에서는 false가 되도록 수정. -> 학습과정에서는 랜덤하게 마스크가 정답레이블에 씌워져야하기 때문에 그렇습니다.
+- data.py 에서 **is_half**가 학습 과정에서는 false가 되도록 수정. -> 학습과정에서는 랜덤하게 마스크가 정답레이블에 씌워져야하기 때문에 그렇습니다.
 - utils.py 의 **calculate_iou** 을 수정하여, 훈련시 올바르게 Iou가 측정될 수 있도록 수정.
 - inference.py에서 iou를 계산하고, iou값을 텍스트파일로 내보내는 코드 추가.
 
