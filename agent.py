@@ -188,7 +188,7 @@ class Agent():
 
             #save_pt
             if i!=0 and i%500 == 0:
-                self.save_checkpoint(epoch + 1, 'current_pt')
+                self.save_checkpoint(epoch + 1, f"loss_{b_loss}_iou_{c_iou[0][0]/c_iou[0][1]}_current_pt")
 
             if self.gpu_id != 0:  # reset for gpu rank > 0
                 batch_losses = T.zeros(2, device=self.gpu_id)

@@ -18,5 +18,6 @@
     "image_mean": [0.485, 0.456, 0.406],
     "image_std": [0.229, 0.224, 0.225],
     "image_log_interval": 5,
-    "n_classes": 2
+    "n_classes": 2,
+    "model_path": "/shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/logs/1722013216/weights/current_pt.pt"
 }

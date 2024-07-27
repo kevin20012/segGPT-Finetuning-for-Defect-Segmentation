@@ -55,6 +55,14 @@ H = 488, W = 488
 ```bash
 python train.py --port {안쓰는 port 입력}
 ```
+3. tensorboard
+```bash
+//train.py 가 있는 디렉토리로 이동
+tensorboard --logdir logs --port {원하는 포트번호}
+```
+이미지 로그 설명
+![example](./train_image_example.png)
+순서대로 [input image], [mask+ground truth], [ground truth], [패치별 예측 결과], [cmap_to_lbl]로 계산한 최종 이미지
 ### 추론
 1. mapping_vit_filtered.json 파일로 input image 및 prompt image 설정  
 key 값 : input image  
