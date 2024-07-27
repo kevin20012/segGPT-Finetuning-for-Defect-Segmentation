@@ -27,24 +27,33 @@ def cmap_to_lbl(cmap: torch.Tensor, color_palette: torch.Tensor):
     label = torch.argmin(dist_mat, axis=3)
 
     result = torch.zeros_like(cmap)
+
     for i in range(B):
         for j in range(N):
-            result[i][label[i] == j] = color_palette[i][j]
+            result[i][label[i] == j] = color_palette[i][j] 
 
     return result, label
 
 def calculate_iou(pred: torch.Tensor, gt: torch.Tensor, mask: torch.Tensor, total_classes: int):
     #total class includes background
     result = torch.zeros((total_classes, 2), dtype=pred.dtype, device=pred.device)
-    masked_gt = mask * gt
-    masked_pred = mask * pred
-    for i in range(total_classes):
-        pred_total = (masked_pred == i)
-        gt_total = (masked_gt == i)
-        intersection = (pred_total & gt_total).sum()
-        union = pred_total.sum() + gt_total.sum() - intersection
-        result[i][0] += intersection
-        result[i][1] += union
+    
+    # masked_gt = mask * gt
+    # masked_pred = mask * pred
+    # for i in range(total_classes):
+    #     pred_total = (masked_pred == i)
+    #     gt_total = (masked_gt == i)
+    #     intersection = (pred_total & gt_total).sum()
+    #     union = pred_total.sum() + gt_total.sum() - intersection
+    #     result[i][0] += intersection
+    #     result[i][1] += union
+    #수정
+    pred_total = (pred == 0)
+    gt_total = (gt != 0)
+    intersection = (pred_total & gt_total).sum()
+    union = pred_total.sum() + gt_total.sum() - intersection
+    result[0][0] += intersection
+    result[0][1] += union
     return result
 
 def create_stitch_mask(h, w, type, width):

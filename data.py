@@ -107,7 +107,9 @@ class BaseDataset(torch.utils.data.Dataset):
         return img, label
 
     def _generate_color_palette(self):
-        return np.random.randint(0, 256, (self.n_classes, 3))
+        color_palette = np.random.randint(0, 256, (self.n_classes, 3))
+        color_palette[1] = [0,0,0]
+        return color_palette
     
     def _init_augmentation(self):
         if self.is_train:
@@ -140,8 +142,10 @@ class BaseDataset(torch.utils.data.Dataset):
 
         # for i in range(self.n_classes):
         #     result[label==i] = color_palette[i]
-        result[label==0] = color_palette[0]
-        result[label!=0] = color_palette[1]
+
+        #수정
+        result[label!=0] = color_palette[0]
+        result[label==0] = color_palette[1]
         
         return result
 

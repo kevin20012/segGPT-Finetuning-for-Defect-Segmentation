@@ -11,6 +11,7 @@ from tqdm import tqdm
 from SegGPT.SegGPT_inference.models_seggpt import seggpt_vit_large_patch16_input896x448
 from PIL import Image
 from utils import *
+import shutil
 
 IMAGENET_MEAN = np.array([0.485, 0.456, 0.406])
 IMAGENET_STD = np.array([0.229, 0.224, 0.225])
@@ -20,7 +21,16 @@ COLOR_MAP = np.array([
     (255,  255, 255), # Sea, lake, & pond
 ])
 
-@torch.no_grad()
+
+def calculate_iou(pred:np.array, gt:np.array):
+    pred_total = (pred != 0)
+    gt_total = (gt != 0)
+    intersection = (pred_total & gt_total).sum()
+    union = pred_total.sum() + gt_total.sum() - intersection
+    
+    return intersection/union
+
+@torch.no_grad()  
 def run_one_image(img, tgt, model, device, mask=None):
     x = torch.tensor(img)
     x = torch.einsum('nhwc->nchw', x)
@@ -136,6 +146,17 @@ def inference_image_with_crop(model, device, img_path, img2_paths, tgt2_paths, o
     final_out_color.save(os.path.join(outdir, 'color', filename))
     final_out_label.save(os.path.join(outdir, 'label', filename))
     concat.save(os.path.join(outdir, 'concat', filename))
+
+    #calculate IOU
+    temp = img_path.split('/')
+    temp[-2] = 'labels'
+    gt_path = '/'.join(temp) 
+    gt = np.array(Image.open(gt_path).convert("RGB").resize((1024, 1024)))[:,:,0]
+    pred_ = np.array(final_out_label)
+    iou = calculate_iou(pred_, gt)
+    print('Iou: ',iou)
+
+    return iou
 
 def inference_stitch(model, device, img_path, tgt_path, lbl_path, img2_paths, tgt2_paths, outdir, split=2, width=4):
     # run after inference_image_with_crop
@@ -268,17 +289,33 @@ if __name__ == '__main__':
     model.eval()
 
     mapping = json.load(open(args.mapping))
-    for input_image in tqdm(mapping):
+
+    try: #디렉토리가 존재하지 않으면 pass, 존재하면 지우기
+        shutil.rmtree(args.outdir)
+    except:
+        pass
+    os.mkdir(args.outdir)
+    #open iou file with write mode
+    iou_file = open(os.path.join(args.outdir, "iou.txt"), 'w')
+    total_iou = 0
+    for idx, input_image in enumerate(tqdm(mapping)):
         input = os.path.join(args.dataset_dir, input_image)
         prompt = [os.path.join(args.prompt_img_dir, file) for file in mapping[input_image][:args.top_k]]
         prompt_target = [os.path.join(args.prompt_label_dir, file) for file in mapping[input_image][:args.top_k]]
-        inference_image_with_crop(model, args.device, input, prompt, prompt_target, args.outdir, split=args.split)
-        # inference_image_with_crop_v2(model, args.device, input, prompt, prompt_target, args.outdir, args.top_k, split=args.split)
+
+        iou = inference_image_with_crop(model, args.device, input, prompt, prompt_target, args.outdir, split=args.split)
+        iou_file.write(f"Iou of [{idx+1} input image] : {iou}\n")
+        total_iou += iou
+
         if args.split == 2:
             tgt_path = os.path.join(args.outdir, 'color', input_image)
             lbl_path = os.path.join(args.outdir, 'label', input_image)
             inference_stitch(model, args.device, input, tgt_path, lbl_path, prompt, prompt_target, args.outdir, split=args.split, width=args.stitch_width)
-
+    
+    mIou = total_iou/len(mapping)
+    print('mIou: ',mIou)
+    iou_file.write(f"---------------mIou---------------\n mIou : {mIou}")
+    iou_file.close()
 """
 python inference.py --ckpt_path /home/steve/SegGPT-FineTune/logs/1710148218/weights/epoch15_loss0.7601_metric0.0000.pt --output_dir submission
 

@@ -1,0 +1,13 @@
+Iou of [1 input image] : 0.16063348416289594
+Iou of [2 input image] : 0.6983925549915397
+Iou of [3 input image] : 0.46296296296296297
+Iou of [4 input image] : 0.2857142857142857
+Iou of [5 input image] : 0.627471383975026
+Iou of [6 input image] : 0.0
+Iou of [7 input image] : 0.3031536113936928
+Iou of [8 input image] : 0.367948717948718
+Iou of [9 input image] : 0.6875739644970414
+Iou of [10 input image] : 0.0
+Iou of [11 input image] : 0.0
+---------------mIou---------------
+ mIou : 0.3267137241496511
