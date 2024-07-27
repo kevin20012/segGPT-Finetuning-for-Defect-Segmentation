@@ -92,32 +92,22 @@ split 인수를 이용해 사진을 n^2 크기의 조각으로 잘라내 각각�
 
 결함이 작은 전자회로의 결함을 판별하는데는 split이 작을 수록 유리하였지만, 케이블의 결함과 같이 큰 결함의 경우에는 결함을 판별하는데 불리하게 작용하게되었습니다.  
 ### split = 1
-
-<img src="./output_split_1/concat/mouse_bite_000518.jpg" height="200"/>  
-
-#### Iou : 0.0
-
-<img src="./output_split_1/concat/thunderbolt_000925.jpg" height="200"/>
-
-#### Iou : 0.099
+|Open circuit|Cable|
+|---|---|
+|<img src="./output_split_1/concat/mouse_bite_000518.jpg" height="150"/>|<img src="./output_split_1/concat/thunderbolt_000925.jpg" height="150"/>|
+|Iou : 0.0|Iou : 0.099|
 
 ### split = 2  
-<img src="./output_split_2/concat/mouse_bite_000518.jpg" height="200"/>
-
-#### Iou : 0.39
-
-<img src="./output_split_2/concat/thunderbolt_000925.jpg" height="200"/>
-
-#### Iou : 0.529   
+|Open circuit|Cable|
+|---|---|
+|<img src="./output_split_2/concat/mouse_bite_000518.jpg" height="150"/>|<img src="./output_split_2/concat/thunderbolt_000925.jpg" height="150"/>|
+|Iou : 0.39|Iou : 0.529  |
 
 ### split = 4
-<img src="./output_split_4/concat/mouse_bite_000518.jpg" height="200"/>
-
-#### Iou : 0.46
-
-<img src="./output_split_4/concat/thunderbolt_000925.jpg" height="200"/>
-
-#### Iou : 0.0
+|Open circuit|Cable|
+|---|---|
+|<img src="./output_split_4/concat/mouse_bite_000518.jpg" height="150"/>|<img src="./output_split_4/concat/thunderbolt_000925.jpg" height="150"/>|
+|Iou : 0.46|Iou : 0.0|
      
 너무 잘게 자른 경우, 큰 결함부위를 잘 예측하지 못하기 때문으로 보입니다.  
 
