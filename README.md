@@ -144,6 +144,7 @@ split 인수를 이용해 사진을 n^2 크기의 조각으로 잘라내 각각�
 |mIou|catch rate|
 |---|---|
 |**0.541**|**0.91**|  
+
 (catch_rate = number of good catch / number of positive pairs)
 
 ## negative support image(input 이미지의 다른 종류의 결함에 해당하는 prompt) 사용 시
@@ -163,7 +164,8 @@ split 인수를 이용해 사진을 n^2 크기의 조각으로 잘라내 각각�
 
 |mIou|yield rate|
 |---|---|
-|**0.527**|**0.182**| 
+|**0.527**|**0.182**|  
+ 
 (yield_rate = number of correct yield / number of negative pairs)
 
 ## 최종 스코어
