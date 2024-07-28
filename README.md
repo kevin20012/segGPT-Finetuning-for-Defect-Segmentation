@@ -183,7 +183,7 @@ segGPT 논문에 따르면 기존 모델의 가중치는 freeze한 채로 learna
 - data.py 에서 **is_half**가 학습 과정에서는 false가 되도록 수정. -> 학습과정에서는 랜덤하게 마스크가 정답레이블에 씌워져야하기 때문에 그렇습니다.
 - utils.py 의 **calculate_iou** 을 수정하여, 훈련시 올바르게 Iou가 측정될 수 있도록 수정.
 - inference.py에서 iou를 계산하고, iou값을 텍스트파일로 내보내는 코드 추가.
-
+- inference.py에서 Evaluation criteria 점수 계산 코드 추가.
 
 
 
