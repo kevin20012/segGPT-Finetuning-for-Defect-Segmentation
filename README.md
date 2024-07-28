@@ -121,24 +121,56 @@ split 인수를 이용해 사진을 n^2 크기의 조각으로 잘라내 각각�
 각 split별 iou의 결과는 ouput_split_{split} 디렉토리 내 **iou.txt**로 확인할 수 있습니다.  
 테스트는 **train과정에서 사용되지 않은 11개의 서로다른 종류의 결함**으로 구성되어있습니다.  
 # 결과
-조건 : split=2, positive support image(input 이미지의 같은 종류의 결함에 해당하는 prompt) 사용
-|Image|Iou|
-|---|---|
-|<img src="./output_final/concat/front_000925.jpg" height="200"/>|**0.843**|
-|<img src="./output_final/concat/impurities_000045.jpg" height="200"/>|**0.777**|
-|<img src="./output_final/concat/mouse_bite_000518.jpg" height="200"/>|**0.424**|
-|<img src="./output_final/concat/open_circuit_000061.jpg" height="200"/>|**0.562**|
-|<img src="./output_final/concat/Porosity_000925.jpg" height="200"/>|**0.419**|
-|<img src="./output_final/concat/RCS_000081.jpg" height="200"/>|**0.623**|
-|<img src="./output_final/concat/short_000081.jpg" height="200"/>|**0.608**|
-|<img src="./output_final/concat/spur_000045.jpg" height="200"/>|**0.508**|
-|<img src="./output_final/concat/spurious_copper_000497.jpg" height="200"/>|**0.609**|
-|<img src="./output_final/concat/thunderbolt_000925.jpg" height="200"/>|**0.534**|
-|<img src="./output_final/concat/torn_apart_000045.jpg" height="200"/>|**0.044**|
+조건 :   
+1. 전체 데이터셋의 절반을 학습에 사용(1epoch)  
+2. split = 2  
 
-|mIou|
-|---|
-|**0.541**|
+
+## positive support image(input 이미지의 같은 종류의 결함에 해당하는 prompt) 사용 시
+|Image|Iou(0.3↑)|Good Catch(good)|
+|---|---|---|
+|<img src="./output_final_positive_pair/concat/front_000925.jpg" height="200"/>|**0.843**|Yes|
+|<img src="./output_final_positive_pair/concat/impurities_000045.jpg" height="200"/>|**0.777**|Yes|
+|<img src="./output_final_positive_pair/concat/mouse_bite_000518.jpg" height="200"/>|**0.424**|Yes|
+|<img src="./output_final_positive_pair/concat/open_circuit_000061.jpg" height="200"/>|**0.562**|Yes|
+|<img src="./output_final_positive_pair/concat/Porosity_000925.jpg" height="200"/>|**0.419**|Yes|
+|<img src="./output_final_positive_pair/concat/RCS_000081.jpg" height="200"/>|**0.623**|Yes|
+|<img src="./output_final_positive_pair/concat/short_000081.jpg" height="200"/>|**0.608**|Yes|
+|<img src="./output_final_positive_pair/concat/spur_000045.jpg" height="200"/>|**0.508**|Yes|
+|<img src="./output_final_positive_pair/concat/spurious_copper_000497.jpg" height="200"/>|**0.609**|Yes|
+|<img src="./output_final_positive_pair/concat/thunderbolt_000925.jpg" height="200"/>|**0.534**|Yes|
+|<img src="./output_final_positive_pair/concat/torn_apart_000045.jpg" height="200"/>|**0.044**|No|
+
+|mIou|catch rate|
+|---|---|
+|**0.541**|**0.91**|  
+(catch_rate = number of good catch / number of positive pairs)
+
+## negative support image(input 이미지의 다른 종류의 결함에 해당하는 prompt) 사용 시
+|Image|Iou(0.3↑)|Response rate(0.000239↓)|overkill(isn't good)|
+|---|---|---|---|
+|<img src="./output_final_negative_pair/concat/front_000925.jpg" height="200"/>|**0.858**|**0.000719**|Yes|
+|<img src="./output_final_negative_pair/concat/impurities_000045.jpg" height="200"/>|**0.782**|**0.001883**|Yes|
+|<img src="./output_final_negative_pair/concat/mouse_bite_000518.jpg" height="200"/>|**0.422**|**0.000169**|No|
+|<img src="./output_final_negative_pair/concat/open_circuit_000061.jpg" height="200"/>|**0.489**|**0.000237**|No|
+|<img src="./output_final_negative_pair/concat/Porosity_000925.jpg" height="200"/>|**0.382**|**0.000706**|Yes|
+|<img src="./output_final_negative_pair/concat/RCS_000081.jpg" height="200"/>|**0.606**|**0.000431**|Yes|
+|<img src="./output_final_negative_pair/concat/short_000081.jpg" height="200"/>|**0.624**|**0.000596**|Yes|
+|<img src="./output_final_negative_pair/concat/spur_000045.jpg" height="200"/>|**0.481**|**0.000362**|Yes|
+|<img src="./output_final_negative_pair/concat/spurious_copper_000497.jpg" height="200"/>|**0.600**|**0.000482**|Yes|
+|<img src="./output_final_negative_pair/concat/thunderbolt_000925.jpg" height="200"/>|**0.526**|**0.021971**|Yes|
+|<img src="./output_final_negative_pair/concat/torn_apart_000045.jpg" height="200"/>|**0.032**|**0.000618**|Yes|
+
+|mIou|yield rate|
+|---|---|
+|**0.527**|**0.182**| 
+(yield_rate = number of correct yield / number of negative pairs)
+
+## 최종 스코어
+PES = 0.5⋅catch_rate+0.5⋅yield_rate  
+
+### PES = 0.546
+
 
 
 # 더 발전시킬 수 있는 것

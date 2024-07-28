@@ -21,6 +21,10 @@ COLOR_MAP = np.array([
     (255,  255, 255), # Sea, lake, & pond
 ])
 
+#Evaluatoin criteria
+CATCH_THRESHOLD = 0.3
+RESP_RATE_THRESHOLD = 0.000239
+
 
 def calculate_iou(pred:np.array, gt:np.array):
     pred_total = (pred != 0)
@@ -29,6 +33,12 @@ def calculate_iou(pred:np.array, gt:np.array):
     union = pred_total.sum() + gt_total.sum() - intersection
     
     return intersection/union
+
+def calculate_correct_yield(pred:np.array):
+    pred_total = (pred != 0).sum()
+    image_size = pred.shape[0]*pred.shape[1]
+
+    return pred_total/image_size
 
 @torch.no_grad()  
 def run_one_image(img, tgt, model, device, mask=None):
@@ -155,8 +165,19 @@ def inference_image_with_crop(model, device, img_path, img2_paths, tgt2_paths, o
     pred_ = np.array(final_out_label)
     iou = calculate_iou(pred_, gt)
     print('Iou: ',iou)
+    if iou >= CATCH_THRESHOLD:
+        print("Catch: good catch")
+    else:
+        print("Catch: pass")
 
-    return iou
+    #calculate correct_yield
+    correct_yield = calculate_correct_yield(pred_)
+    if correct_yield < RESP_RATE_THRESHOLD:
+        print("correct_yield: correct yield")
+    else:
+        print("correct_yield: overkill")
+
+    return iou, correct_yield
 
 def inference_stitch(model, device, img_path, tgt_path, lbl_path, img2_paths, tgt2_paths, outdir, split=2, width=4):
     # run after inference_image_with_crop
@@ -296,15 +317,31 @@ if __name__ == '__main__':
         pass
     os.mkdir(args.outdir)
     #open iou file with write mode
-    iou_file = open(os.path.join(args.outdir, "iou.txt"), 'w')
+    iou_file = open(os.path.join(args.outdir, "info.txt"), 'w')
     total_iou = 0
+    good_catch_total = 0
+    correct_yield_total = 0
     for idx, input_image in enumerate(tqdm(mapping)):
         input = os.path.join(args.dataset_dir, input_image)
         prompt = [os.path.join(args.prompt_img_dir, file) for file in mapping[input_image][:args.top_k]]
         prompt_target = [os.path.join(args.prompt_label_dir, file) for file in mapping[input_image][:args.top_k]]
 
-        iou = inference_image_with_crop(model, args.device, input, prompt, prompt_target, args.outdir, split=args.split)
-        iou_file.write(f"Iou of [{idx+1} input image] : {iou}\n")
+        iou, correct_yield = inference_image_with_crop(model, args.device, input, prompt, prompt_target, args.outdir, split=args.split)
+
+        
+        if iou >= CATCH_THRESHOLD:
+            catch_result = "good catch"
+            good_catch_total+=1
+        else:
+            catch_result = "escape" 
+
+        if correct_yield < RESP_RATE_THRESHOLD:
+            yield_result = "correct yield"
+            correct_yield_total+=1
+        else:
+            yield_result = "overkill"
+
+        iou_file.write(f"Iou, good catch, correct_yield of [{idx+1} input image] : {iou}("+catch_result+"), "+f", {correct_yield}("+yield_result+")"+"\n")
         total_iou += iou
 
         if args.split == 2:
@@ -313,8 +350,14 @@ if __name__ == '__main__':
             inference_stitch(model, args.device, input, tgt_path, lbl_path, prompt, prompt_target, args.outdir, split=args.split, width=args.stitch_width)
     
     mIou = total_iou/len(mapping)
+    catch_rate = good_catch_total/len(mapping)
+    yield_rate = correct_yield_total/len(mapping)
+    pes = 0.5*catch_rate + 0.5*yield_rate
     print('mIou: ',mIou)
-    iou_file.write(f"---------------mIou---------------\n mIou : {mIou}")
+    iou_file.write(f"---------------mIou---------------\n mIou : {mIou}\n")
+    iou_file.write(f"---------------catch_rate---------------\n catch_rate : {catch_rate}\n")
+    iou_file.write(f"---------------yield_rate---------------\n yield_rate : {yield_rate}\n")
+    iou_file.write(f"---------------PES---------------\n pes : {pes}\n")
     iou_file.close()
 """
 python inference.py --ckpt_path /home/steve/SegGPT-FineTune/logs/1710148218/weights/epoch15_loss0.7601_metric0.0000.pt --output_dir submission
