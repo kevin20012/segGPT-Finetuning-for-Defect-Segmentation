@@ -121,6 +121,7 @@ split 인수를 이용해 사진을 n^2 크기의 조각으로 잘라내 각각�
 각 split별 iou의 결과는 ouput_split_{split} 디렉토리 내 **iou.txt**로 확인할 수 있습니다.  
 테스트는 **train과정에서 사용되지 않은 11개의 서로다른 종류의 결함**으로 구성되어있습니다.  
 # 결과
+조건 : split=2, positive support image(input 이미지의 같은 종류의 결함에 해당하는 prompt) 사용
 |Image|Iou|
 |---|---|
 |<img src="./output_final/concat/front_000925.jpg" height="200"/>|**0.843**|
