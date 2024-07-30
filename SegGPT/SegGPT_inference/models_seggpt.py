@@ -465,7 +465,8 @@ class SegGPT(nn.Module):
             loss = (pred - target) ** 2.
         elif self.loss_func == "smoothl1":
             loss = F.smooth_l1_loss(pred, target, reduction="none", beta=0.01)
-        loss = (loss * mask).sum() / mask.sum()  # mean loss on removed patches
+        #learnable tensor 학습 시에는 마스크 여부가 필요가 없음.
+        #loss = (loss * mask).sum() / mask.sum()  # mean loss on removed patches
         return loss
 
     def forward(self, imgs, tgts, bool_masked_pos=None, valid=None, seg_type=None, merge_between_batch=-1):

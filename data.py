@@ -21,6 +21,7 @@ class BaseDataset(torch.utils.data.Dataset):
         patch_size: Tuple[int, int] = (16, 16),
         mask_ratio: float = 0.75,
         is_train: bool = True,
+        use_learnable_prompt = False
     ):
         super().__init__()
         assert osp.exists(osp.join(root, 'images')), f'Path {root}/images does not exist'
@@ -32,6 +33,7 @@ class BaseDataset(torch.utils.data.Dataset):
         self.std = np.array(std)
         self.resize = resize
         self.is_train = is_train
+        self.use_learnable_tensor = use_learnable_prompt
         self.n_classes = n_classes
         self.patch_size = patch_size
         self.mask_ratio = mask_ratio
@@ -171,44 +173,60 @@ class BaseDataset(torch.utils.data.Dataset):
         return mask
 
     def __getitem__(self, idx):
-        if self.is_train:
-            if idx < len(self.same_class_pairs):
-                pair_idx1, pair_idx2 = self.same_class_pairs[idx]
+        if self.use_learnable_tensor == False:
+            if self.is_train:
+                if idx < len(self.same_class_pairs):
+                    pair_idx1, pair_idx2 = self.same_class_pairs[idx]
+                else:
+                    pair_idx1, pair_idx2 = self.diff_class_pairs[idx - len(self.same_class_pairs)]
+
+                if np.random.rand() > 0.5: # swap pair
+                    pair_idx1, pair_idx2 = pair_idx2, pair_idx1
             else:
-                pair_idx1, pair_idx2 = self.diff_class_pairs[idx - len(self.same_class_pairs)]
+                pair_idx1, pair_idx2 = self.same_class_pairs[idx]
 
-            if np.random.rand() > 0.5: # swap pair
-                pair_idx1, pair_idx2 = pair_idx2, pair_idx1
+            img1, ori_label1 = self.images[pair_idx1], self.labels[pair_idx1]
+            img2, ori_label2 = self.images[pair_idx2], self.labels[pair_idx2]
+
+            color_palette = self._generate_color_palette()
+            label1 = self._lbl_random_color(ori_label1, color_palette)
+            label2 = self._lbl_random_color(ori_label2, color_palette)
+
+            img, label, ori_label = self._augment([img1, img2], [label1, label2], [ori_label1, ori_label2])
+            img = np.concatenate(img, axis=0)
+            label = np.concatenate(label, axis=0)
+            ori_label = np.concatenate(ori_label, axis=0)
+            
+            img = self._to_img_tensor(img)
+            label = self._to_img_tensor(label)
+            ori_label = torch.FloatTensor(ori_label)
+            
+            if not self.is_train:
+                is_half = True 
+            else:
+                is_half = False
+            mask = self._generate_mask((img.shape[1], img.shape[2]), is_half)
+            valid = torch.ones_like(label)
+            seg_type = torch.zeros([1])
+            color_palette = torch.FloatTensor(color_palette)
         else:
-            pair_idx1, pair_idx2 = self.same_class_pairs[idx]
-
-        img1, ori_label1 = self.images[pair_idx1], self.labels[pair_idx1]
-        img2, ori_label2 = self.images[pair_idx2], self.labels[pair_idx2]
-
-        color_palette = self._generate_color_palette()
-        label1 = self._lbl_random_color(ori_label1, color_palette)
-        label2 = self._lbl_random_color(ori_label2, color_palette)
-
-        img, label, ori_label = self._augment([img1, img2], [label1, label2], [ori_label1, ori_label2])
-        img = np.concatenate(img, axis=0)
-        label = np.concatenate(label, axis=0)
-        ori_label = np.concatenate(ori_label, axis=0)
-        
-        img = self._to_img_tensor(img)
-        label = self._to_img_tensor(label)
-        ori_label = torch.FloatTensor(ori_label)
-        
-        if not self.is_train:
-            is_half = True 
-        else:
-            is_half = False
-        mask = self._generate_mask((img.shape[1], img.shape[2]), is_half)
-        valid = torch.ones_like(label)
-        seg_type = torch.zeros([1])
-        color_palette = torch.FloatTensor(color_palette)
+            # learnable tensor를 사용하면, 이미지 2개로 input image를 구성하면 안됨. 
+            # 새로만든 모델에서 learnable parameter (488,488) 을 위쪽에 추가해 붙이기 때문에 한개로 데이터를 구성하면, 모델에 들어가 다시 위:이미지, 아래:prompt tensor로 (896, 488)의 인풋형태로 segGPT에 들어가기 때문
+            img, ori_label = self.images[idx], self.labels[idx]
+            img, label, ori_label = self._augment([img], [ori_label], [ori_label])
+            
+            img, label, ori_label = self._to_img_tensor(np.array(img)), self._to_img_tensor(np.array(label)), torch.FloatTensor(np.array(ori_label))
+            mask = self._generate_mask((img.shape[1], img.shape[2]), is_half)
+            valid = torch.ones_like(label)
+            seg_type = torch.zeros([1])
+            color_palette = torch.FloatTensor(color_palette)
+            
         return img, label, mask, valid, seg_type, ori_label, color_palette
 
     def __len__(self):
-        if self.is_train:
-            return len(self.same_class_pairs) + len(self.diff_class_pairs)
-        return min(len(self.same_class_pairs), 1600)
+        if self.use_learnable_tensor == False:
+            if self.is_train:
+                return len(self.same_class_pairs) + len(self.diff_class_pairs)
+            return min(len(self.same_class_pairs), 1600)
+        else:
+            return len(self.images)
