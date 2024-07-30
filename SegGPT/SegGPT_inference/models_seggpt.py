@@ -264,6 +264,7 @@ class SegGPT(nn.Module):
              out_feature="last_feat",
              decoder_embed_dim=128,
              loss_func="smoothl1",
+             use_learnable_tensor = False
              ):
         super().__init__()
 
@@ -277,6 +278,7 @@ class SegGPT(nn.Module):
             embed_dim=embed_dim,
         )
         self.patch_embed.num_patches = (img_size[0] // patch_size) * (img_size[1] // patch_size)
+        self.use_learnable_tensor = use_learnable_tensor
 
         self.mask_token = nn.Parameter(torch.zeros(1, 1, 1, embed_dim))
         self.segment_token_x = nn.Parameter(torch.zeros(1, 1, 1, embed_dim))
@@ -456,6 +458,8 @@ class SegGPT(nn.Module):
         mask = self.unpatchify(mask)
         mask = mask * valid
 
+
+
         target = tgts
         if self.loss_func == "l1l2":
             loss = ((pred - target).abs() + (pred - target) ** 2.) * 0.5
@@ -465,8 +469,11 @@ class SegGPT(nn.Module):
             loss = (pred - target) ** 2.
         elif self.loss_func == "smoothl1":
             loss = F.smooth_l1_loss(pred, target, reduction="none", beta=0.01)
-        #learnable tensor 학습 시에는 마스크 여부가 필요가 없음.
+
         #loss = (loss * mask).sum() / mask.sum()  # mean loss on removed patches
+
+        loss = loss.sum() / (loss.shape[0]*loss.shape[1]*loss.shape[2]*loss.shape[3])
+
         return loss
 
     def forward(self, imgs, tgts, bool_masked_pos=None, valid=None, seg_type=None, merge_between_batch=-1):
@@ -514,4 +521,3 @@ def get_vit_lr_decay_rate(name, lr_decay_rate=1.0, num_layers=12):
             layer_id = int(name[name.find(".blocks.") :].split(".")[2]) + 1
 
     return lr_decay_rate ** (num_layers + 1 - layer_id)
-

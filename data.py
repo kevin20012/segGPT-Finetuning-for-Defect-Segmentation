@@ -173,6 +173,11 @@ class BaseDataset(torch.utils.data.Dataset):
         return mask
 
     def __getitem__(self, idx):
+        if not self.is_train:
+            is_half = True 
+        else:
+            is_half = False
+
         if self.use_learnable_tensor == False:
             if self.is_train:
                 if idx < len(self.same_class_pairs):
@@ -201,10 +206,7 @@ class BaseDataset(torch.utils.data.Dataset):
             label = self._to_img_tensor(label)
             ori_label = torch.FloatTensor(ori_label)
             
-            if not self.is_train:
-                is_half = True 
-            else:
-                is_half = False
+            
             mask = self._generate_mask((img.shape[1], img.shape[2]), is_half)
             valid = torch.ones_like(label)
             seg_type = torch.zeros([1])
@@ -213,11 +215,22 @@ class BaseDataset(torch.utils.data.Dataset):
             # learnable tensor를 사용하면, 이미지 2개로 input image를 구성하면 안됨. 
             # 새로만든 모델에서 learnable parameter (488,488) 을 위쪽에 추가해 붙이기 때문에 한개로 데이터를 구성하면, 모델에 들어가 다시 위:이미지, 아래:prompt tensor로 (896, 488)의 인풋형태로 segGPT에 들어가기 때문
             img, ori_label = self.images[idx], self.labels[idx]
-            img, label, ori_label = self._augment([img], [ori_label], [ori_label])
-            
+
+            color_palette = [[255,255,255], [0,0,0]]
+            label = self._lbl_random_color(ori_label, color_palette)
+
+            img, label, ori_label = self._augment([img], [label], [ori_label])
+            img, label, ori_label = img[0], label[0], ori_label[0]
+            # print(np.array(img).shape, np.array(label).shape, np.array(ori_label).shape)
             img, label, ori_label = self._to_img_tensor(np.array(img)), self._to_img_tensor(np.array(label)), torch.FloatTensor(np.array(ori_label))
-            mask = self._generate_mask((img.shape[1], img.shape[2]), is_half)
-            valid = torch.ones_like(label)
+
+            # 최종 mask의 크기 (896, 448)
+            total_patch = (img.shape[1] // self.patch_size[0]) * (img.shape[2] // self.patch_size[1])
+            mask = torch.zeros(total_patch*2, dtype=torch.float32)
+
+
+
+            valid = torch.ones((label.shape[0], label.shape[1]*2, label.shape[2]))
             seg_type = torch.zeros([1])
             color_palette = torch.FloatTensor(color_palette)
             

@@ -1,3 +1,4 @@
+
 import sys
 sys.path.append('SegGPT/SegGPT_inference')
 
@@ -39,6 +40,7 @@ def main(rank: int, world_size: int, train_args: Dict, port: int):
         mask_ratio = train_args['mask_ratio'],
         resize = (1024, 1024),
         is_train=True,
+        use_learnable_prompt=True
     )
     val_dataset = BaseDataset(
         root = train_args['val_dataset_dir'], 
@@ -49,20 +51,26 @@ def main(rank: int, world_size: int, train_args: Dict, port: int):
         mask_ratio = train_args['mask_ratio'],
         resize = (448, 448),
         is_train = False,
+        use_learnable_prompt=True
     )
 
     logger.info('Instantiating model and trainer agent')
 
     model = seggpt_vit_large_patch16_input896x448()
+    
+    if 'model_path' in train_args:
+        ckpt = T.load(train_args['model_path'], map_location='cpu')
+        model.load_state_dict(ckpt['model_state_dict'], strict=False)
+    else:
+        ckpt = T.load('seggpt_vit_large.pth', map_location='cpu')
+        model.load_state_dict(ckpt['model'], strict=False)
 
-    initial_ckpt = T.load('seggpt_vit_large.pth', map_location='cpu')
-    model.load_state_dict(initial_ckpt['model'], strict=False)
+    model = AdapterSegGPT(seggpt_model=model)
+    
     logger.info('Initial checkpoint loaded')
 
-    trainer = Agent(model, rank, train_args)
+    trainer = AgentAdapter(model, rank, train_args)
     logger.info(f'Using {T.cuda.device_count()} GPU(s)')
-    if 'model_path' in train_args:
-        trainer.load_checkpoint(train_args['model_path'])
 
     logger.info('Instantiating dataloader')
     train_dataloader = T.utils.data.DataLoader(
