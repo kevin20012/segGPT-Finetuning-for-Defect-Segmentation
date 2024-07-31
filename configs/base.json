@@ -11,7 +11,7 @@
     "train_dataset_dir": "./dataset/train_dataset/train",
     "val_dataset_dir": "./dataset/train_dataset/val",
     "data_count": -1, 
-    "mask_ratio": 0.8,
+    "mask_ratio": 0.75,
     "num_workers": 4,
     "eval_per_epoch": 1,
     "ckpt_interval": 3,

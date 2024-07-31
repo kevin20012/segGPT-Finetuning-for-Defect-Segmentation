@@ -12,6 +12,7 @@ from SegGPT.SegGPT_inference.models_seggpt import seggpt_vit_large_patch16_input
 from PIL import Image
 from utils import *
 import shutil
+from model import AdapterSegGPT
 
 IMAGENET_MEAN = np.array([0.485, 0.456, 0.406])
 IMAGENET_STD = np.array([0.229, 0.224, 0.225])
@@ -42,6 +43,11 @@ def calculate_correct_yield(pred:np.array):
 
 @torch.no_grad()  
 def run_one_image(img, tgt, model, device, mask=None):
+    if args.use_learnable_tensor == True:
+        _model = model.seggpt
+    else:
+        _model = model
+
     x = torch.tensor(img)
     x = torch.einsum('nhwc->nchw', x)
 
@@ -49,26 +55,30 @@ def run_one_image(img, tgt, model, device, mask=None):
     tgt = torch.einsum('nhwc->nchw', tgt)
 
     if mask is None:
-        bool_masked_pos = torch.zeros(model.patch_embed.num_patches)
-        bool_masked_pos[model.patch_embed.num_patches//2:] = 1
+        bool_masked_pos = torch.zeros(_model.patch_embed.num_patches)
+        bool_masked_pos[_model.patch_embed.num_patches//2:] = 1
         bool_masked_pos = bool_masked_pos.unsqueeze(dim=0)
     else:
         bool_masked_pos = torch.tensor(mask).unsqueeze(dim=0)
-    valid = torch.ones_like(tgt)
+
+    if args.use_learnable_tensor == False:
+        valid = torch.ones_like(tgt)
+    else:
+        valid = torch.ones((tgt.shape[0], tgt.shape[1], tgt.shape[2]*2, tgt.shape[3]))
 
     seg_type = torch.zeros([valid.shape[0], 1])
     
     feat_ensemble = 0 if len(x) > 1 else -1
     _, y, mask = model(x.float().to(device), tgt.float().to(device), bool_masked_pos.to(device), valid.float().to(device), seg_type.to(device), feat_ensemble)
-    y = model.unpatchify(y)
+    y = _model.unpatchify(y)
     y = torch.einsum('nchw->nhwc', y).detach().cpu()
 
     output = y[0, y.shape[1]//2:, :, :] 
 
     output = torch.clip((output * IMAGENET_STD + IMAGENET_MEAN) * 255, 0, 255)
 
-    mask = mask[:, :, None].repeat(1, 1, model.patch_size**2 * 3)
-    mask = model.unpatchify(mask)
+    mask = mask[:, :, None].repeat(1, 1, _model.patch_size**2 * 3)
+    mask = _model.unpatchify(mask)
     mask = mask.permute(0, 2, 3, 1)
     mask = mask[0, mask.shape[1]//2:, :, :]
     mask = mask.cpu().float()
@@ -95,6 +105,7 @@ def inference_image_with_crop(model, device, img_path, img2_paths, tgt2_paths, o
 
             image_batch, target_batch = [], []
             for img2_path, tgt2_path in zip(img2_paths, tgt2_paths):
+                print(img2_path)
                 full_img2 = Image.open(img2_path).convert("RGB").resize((1024, 1024))
                 full_tgt2 = Image.open(tgt2_path).convert("RGB").resize((1024, 1024), Image.NEAREST)
 
@@ -125,6 +136,12 @@ def inference_image_with_crop(model, device, img_path, img2_paths, tgt2_paths, o
 
                         image_batch.append(img)
                         target_batch.append(tgt)
+
+            if args.use_learnable_tensor == True:
+                image = image - IMAGENET_MEAN
+                image = image / IMAGENET_STD
+                image_batch.append(image)
+                target_batch.append(image) #어차피 inference과정에서 마스크로 가리므로 아무 이미지나 상관없음
             
             img = np.stack(image_batch, axis=0)
             tgt = np.stack(target_batch, axis=0)
@@ -244,6 +261,14 @@ def inference_stitch(model, device, img_path, tgt_path, lbl_path, img2_paths, tg
 
                     image_batch.append(img)
                     target_batch.append(tgt)
+
+        if args.use_learnable_tensor == True:
+            cropped_image = cropped_image - IMAGENET_MEAN
+            cropped_image = cropped_image / IMAGENET_STD
+            cropped_tgt = cropped_tgt - IMAGENET_MEAN
+            cropped_tgt = cropped_tgt / IMAGENET_STD
+            image_batch.append(cropped_image)
+            target_batch.append(cropped_tgt) #어차피 inference과정에서 마스크로 가리므로 아무 이미지나 상관없음
         
         img = np.stack(image_batch, axis=0)
         tgt = np.stack(target_batch, axis=0)
@@ -295,15 +320,28 @@ def get_args_parser():
     parser.add_argument('--top-k', type=int, help='top-k prompts to use', default=2)
     parser.add_argument('--device', type=str, help='cuda or cpu', default='cuda')
     parser.add_argument('--outdir', type=str, help='path to output directory', default='/shared/home/vclp/hyunwook/junhyung/segGPT_origin/SegGPT-FineTune/output')
+    parser.add_argument('--use_learnable_tensor', type=bool, help='select using learnable tensor or not', default=False)
+    parser.add_argument('--learnable_tensor_path', type=str, help='path to learnable tensor')
     return parser.parse_args()
 
 if __name__ == '__main__':
     args = get_args_parser()
     print(args)
 
+    
     model = seggpt_vit_large_patch16_input896x448()
     ckpt = T.load(args.model_path, map_location='cpu')
     model.load_state_dict(ckpt['model_state_dict'])
+
+    if args.use_learnable_tensor == False:
+        pass
+    else:
+        # learnable_tensor를 이용하면, prompt_image가 필요가 없습니다. 따라서 zero-shot으로 진행하시면됩니다.
+        model = AdapterSegGPT(seggpt_model=model)
+        learnable_tensor_ckpt = T.load(args.learnable_tensor_path, map_location='cpu')
+        model.image_tensor.data.copy_(learnable_tensor_ckpt['model_state_dict']['image_tensor'])
+        model.prompt_tensor.data.copy_(learnable_tensor_ckpt['model_state_dict']['prompt_tensor'])
+
     print('Checkpoint loaded')
 
     model = model.to(args.device)

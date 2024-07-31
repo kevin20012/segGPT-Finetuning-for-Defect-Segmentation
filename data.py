@@ -216,7 +216,7 @@ class BaseDataset(torch.utils.data.Dataset):
             # 새로만든 모델에서 learnable parameter (488,488) 을 위쪽에 추가해 붙이기 때문에 한개로 데이터를 구성하면, 모델에 들어가 다시 위:이미지, 아래:prompt tensor로 (896, 488)의 인풋형태로 segGPT에 들어가기 때문
             img, ori_label = self.images[idx], self.labels[idx]
 
-            color_palette = [[255,255,255], [0,0,0]]
+            color_palette = self._generate_color_palette()
             label = self._lbl_random_color(ori_label, color_palette)
 
             img, label, ori_label = self._augment([img], [label], [ori_label])
@@ -225,8 +225,9 @@ class BaseDataset(torch.utils.data.Dataset):
             img, label, ori_label = self._to_img_tensor(np.array(img)), self._to_img_tensor(np.array(label)), torch.FloatTensor(np.array(ori_label))
 
             # 최종 mask의 크기 (896, 448)
-            total_patch = (img.shape[1] // self.patch_size[0]) * (img.shape[2] // self.patch_size[1])
-            mask = torch.zeros(total_patch*2, dtype=torch.float32)
+            total_patch = 2*(img.shape[1] // self.patch_size[0]) * (img.shape[2] // self.patch_size[1])
+            mask = torch.zeros(total_patch, dtype=torch.float32)
+            mask[total_patch//2:] = 1 #input이미지의 label을 막음
 
 
 

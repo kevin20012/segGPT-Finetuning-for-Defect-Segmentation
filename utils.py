@@ -29,8 +29,10 @@ def cmap_to_lbl(cmap: torch.Tensor, color_palette: torch.Tensor):
     result = torch.zeros_like(cmap)
 
     for i in range(B):
-        for j in range(N):
-            result[i][label[i] == j] = color_palette[i][j] 
+        # 1이 결함 label 값
+        result[i][label[i] == 0] = color_palette[i][0] 
+        result[i][label[i] != 0] = color_palette[i][1]
+         
 
     return result, label
 

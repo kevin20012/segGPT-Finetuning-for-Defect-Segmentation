@@ -434,10 +434,6 @@ class AgentAdapter(Agent):
                 self.visualize(f'Training/{epoch}', img, label, preds, cmaps, masks)
                 yield i
 
-            #save_pt
-            if i!=0 and i%100 == 0:
-                self.save_checkpoint(epoch + 1, f"loss_{b_loss}_iou_{c_iou[0][0]/c_iou[0][1]}_current_pt")
-
 
             if self.gpu_id != 0:  # reset for gpu rank > 0
                 batch_losses = T.zeros(2, device=self.gpu_id)
@@ -452,6 +448,10 @@ class AgentAdapter(Agent):
 
             avg_losses = batch_losses[0] / batch_losses[1]
             m_iou = 100 * iou[0, 0] / (iou[0, 1] + 1e-10)
+
+            #save_pt
+            if i!=0 and i%100 == 0:
+                self.save_checkpoint(epoch + 1, f"loss_{avg_losses}_iou_{m_iou}_current_pt")
             
             pbar.set_postfix({
                 'Loss': f'{avg_losses:.5f}',

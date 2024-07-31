@@ -1,0 +1,19 @@
+Iou, good catch, correct_yield of [1 input image] : 0.0(escape), , 0.0(correct yield)
+Iou, good catch, correct_yield of [2 input image] : 0.0(escape), , 0.0(correct yield)
+Iou, good catch, correct_yield of [3 input image] : 0.0(escape), , 0.0(correct yield)
+Iou, good catch, correct_yield of [4 input image] : 0.0(escape), , 0.0(correct yield)
+Iou, good catch, correct_yield of [5 input image] : 0.0(escape), , 0.0(correct yield)
+Iou, good catch, correct_yield of [6 input image] : 0.0(escape), , 0.0(correct yield)
+Iou, good catch, correct_yield of [7 input image] : 0.0(escape), , 0.0(correct yield)
+Iou, good catch, correct_yield of [8 input image] : 0.0(escape), , 0.0(correct yield)
+Iou, good catch, correct_yield of [9 input image] : 0.0012077294685990338(escape), , 9.5367431640625e-07(correct yield)
+Iou, good catch, correct_yield of [10 input image] : 0.0(escape), , 0.0(correct yield)
+Iou, good catch, correct_yield of [11 input image] : 0.0(escape), , 0.0(correct yield)
+---------------mIou---------------
+ mIou : 0.00010979358805445761
+---------------catch_rate---------------
+ catch_rate : 0.0
+---------------yield_rate---------------
+ yield_rate : 1.0
+---------------PES---------------
+ pes : 0.5
