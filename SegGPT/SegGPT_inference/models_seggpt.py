@@ -460,7 +460,9 @@ class SegGPT(nn.Module):
 
 
 
-        target = tgts
+        target = tgts[:, :, tgts.shape[2]//2:,:]
+        pred = pred[:, :, pred.shape[2]//2:,:]
+        
         if self.loss_func == "l1l2":
             loss = ((pred - target).abs() + (pred - target) ** 2.) * 0.5
         elif self.loss_func == "l1":

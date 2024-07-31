@@ -18,5 +18,6 @@
     "image_mean": [0.485, 0.456, 0.406],
     "image_std": [0.229, 0.224, 0.225],
     "image_log_interval": 5,
-    "n_classes": 2
+    "n_classes": 2,
+    "model_path": "/shared/home/vclp/hyunwook/junhyung/weights/segGPT/current_pt_loss_0_00298_iou_89_507.pt"
 }
