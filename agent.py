@@ -435,7 +435,7 @@ class AgentAdapter(Agent):
                 yield i
 
             #save_pt
-            if i!=0 and i%50 == 0:
+            if i!=0 and i%100 == 0:
                 self.save_checkpoint(epoch + 1, f"loss_{b_loss}_iou_{c_iou[0][0]/c_iou[0][1]}_current_pt")
 
 
@@ -451,23 +451,23 @@ class AgentAdapter(Agent):
             T.distributed.reduce(iou, dst=0)
 
             avg_losses = batch_losses[0] / batch_losses[1]
-            m_iou = 100 * iou[:, 0] / (iou[:, 1] + 1e-10)
+            m_iou = 100 * iou[0, 0] / (iou[0, 1] + 1e-10)
             
             pbar.set_postfix({
                 'Loss': f'{avg_losses:.5f}',
-                'mIoU': f'{m_iou[0].mean().item():.3f}', # exclude background on mIoU
-                'IoU': ['%.3f' % x for x in m_iou.tolist()]
+                'mIoU': f'{m_iou:.3f}', # exclude background on mIoU
+                'IoU': f'{m_iou:.3f}'
             })
 
         if not is_train:
             self.last_loss = avg_losses
-            self.last_metric_val = m_iou[0].mean().item()
+            self.last_metric_val = m_iou
 
             self.write_summary('Validation/Loss', avg_losses, epoch)
-            self.write_summary('Validation/mIoU', m_iou[0].mean().item(), epoch)
+            self.write_summary('Validation/mIoU', m_iou, epoch)
         else:
             self.write_summary('Training/Loss', avg_losses, epoch)
-            self.write_summary('Training/mIoU', m_iou[0].mean().item(), epoch)
+            self.write_summary('Training/mIoU', m_iou, epoch)
 
         yield -1
 
