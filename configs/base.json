@@ -15,8 +15,8 @@
     "num_workers": 4,
     "eval_per_epoch": 1,
     "ckpt_interval": 3,
-    "image_mean": [0.485, 0.456, 0.406],
-    "image_std": [0.229, 0.224, 0.225],
+    "image_mean": [0.178, 0.301, 0.194],
+    "image_std": [0.255, 0.220, 0.238],
     "image_log_interval": 5,
     "n_classes": 2
 }

@@ -186,10 +186,6 @@ class Agent():
                 self.visualize(f'Training/{epoch}', img, label, preds, cmaps, masks)
                 yield i
 
-            #save_pt
-            if i!=0 and i%500 == 0:
-                self.save_checkpoint(epoch + 1, f"loss_{b_loss}_iou_{c_iou[0][0]/c_iou[0][1]}_current_pt")
-
             if self.gpu_id != 0:  # reset for gpu rank > 0
                 batch_losses = T.zeros(2, device=self.gpu_id)
                 iou = T.zeros((n_classes, 2), device=self.gpu_id)
@@ -202,12 +198,16 @@ class Agent():
             T.distributed.reduce(iou, dst=0)
 
             avg_losses = batch_losses[0] / batch_losses[1]
-            m_iou = 100 * iou[:, 0] / (iou[:, 1] + 1e-10)
+            m_iou = 100 * iou[0, 0] / (iou[0, 1] + 1e-10)
+
+            #save_pt
+            if i!=0 and i%500 == 0:
+                self.save_checkpoint(epoch + 1, f"loss_{avg_losses}_iou_{m_iou}_current_pt")
             
             pbar.set_postfix({
                 'Loss': f'{avg_losses:.5f}',
-                'mIoU': f'{m_iou[1:].mean().item():.3f}', # exclude background on mIoU
-                'IoU': ['%.3f' % x for x in m_iou.tolist()]
+                'mIoU': f'{m_iou:.3f}', # exclude background on mIoU
+                'IoU': f'{m_iou:.3f}'
             })
 
         if not is_train:
@@ -215,14 +215,14 @@ class Agent():
             self.last_metric_val = m_iou.mean().item()
 
             self.write_summary('Validation/Loss', avg_losses, epoch)
-            self.write_summary('Validation/mIoU', m_iou[1:].mean().item(), epoch)
-            for cls_id, c_iou in enumerate(m_iou.tolist()):
-                self.write_summary(f'Validation/IoU_{cls_id}', c_iou, epoch)
+            self.write_summary('Validation/mIoU', m_iou, epoch)
+            # for cls_id, c_iou in enumerate(m_iou.tolist()):
+            #     self.write_summary(f'Validation/IoU_{cls_id}', c_iou, epoch)
         else:
             self.write_summary('Training/Loss', avg_losses, epoch)
-            self.write_summary('Training/mIoU', m_iou[1:].mean().item(), epoch)
-            for cls_id, c_iou in enumerate(m_iou.tolist()):
-                self.write_summary(f'Training/IoU_{cls_id}', c_iou, epoch)
+            self.write_summary('Training/mIoU', m_iou, epoch)
+            # for cls_id, c_iou in enumerate(m_iou.tolist()):
+            #     self.write_summary(f'Training/IoU_{cls_id}', c_iou, epoch)
 
         yield -1
 
